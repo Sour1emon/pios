@@ -34,7 +34,6 @@ kernel8.img: check-toolchain $(SRC_DIR)/linker.ld $(OBJ_FILES)
 
 # Create boot.img with config.txt
 $(BOOT_IMG): $(CONFIG_TXT)
-	@echo "Creating boot.img with config.txt..."
 	@dd if=/dev/zero of=$(BOOT_IMG) bs=1M count=64 status=none
 	@mformat -i $(BOOT_IMG) ::/
 	@mcopy -i $(BOOT_IMG) $(CONFIG_TXT) ::/
@@ -50,6 +49,6 @@ check-toolchain:
 .PHONY: run
 run: kernel8.img $(BOOT_IMG)
 	@command -v qemu-system-aarch64 >/dev/null 2>&1 || { echo "qemu-system-aarch64 not found in PATH"; exit 1; }
-	@qemu-system-aarch64 -m 1024 -no-reboot -M raspi3b -serial null -serial stdio \
+	@qemu-system-aarch64 -m 1024 -no-reboot -M raspi3b -serial stdio \
 		-kernel "$(CURDIR)/kernel8.img" \
 		-drive file="$(CURDIR)/$(BOOT_IMG)",format=raw,if=sd,media=disk

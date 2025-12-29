@@ -1,5 +1,0 @@
-arm_64bit=1
-disable_commandline_tags=1
-
-enable_uart=1
-core_freq=250

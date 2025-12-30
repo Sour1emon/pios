@@ -8,4 +8,3 @@ void kernel_main(void) {
     uart_send(uart_recv());
   }
 }
-

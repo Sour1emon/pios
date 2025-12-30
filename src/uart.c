@@ -47,3 +47,5 @@ void uart_send_string(char *str) {
     uart_send(str[i]);
   }
 }
+
+void putc(void * p, char c) { uart_send(c); }

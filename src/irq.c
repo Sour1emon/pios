@@ -1,6 +1,7 @@
 #include "irq.h"
 #include "peripherals/irq.h"
 #include "printf.h"
+#include "stddef.h"
 #include "timer.h"
 #include "uart.h"
 #include "utils.h"
@@ -27,8 +28,13 @@ void enable_interrupt_controller() {
 
 void show_invalid_entry_message(int type, unsigned long esr,
                                 unsigned long address) {
-  printf("%s, ESR: %x, address: %x\r\n", entry_error_messages[type], esr,
-         address);
+  // Bounds checking (haha no funny buffer overflow bugs)
+  size_t msg_count =
+      sizeof(entry_error_messages) / sizeof(entry_error_messages[0]);
+  const char *msg = (type >= 0 && (size_t)type < msg_count)
+                        ? entry_error_messages[type]
+                        : "UNKNOWN";
+  printf("%s, ESR: %lx, address: %lx\r\n", msg, esr, address);
 }
 
 void handle_irq(void) {

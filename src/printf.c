@@ -8,11 +8,11 @@ static void *stdout_putp;
 
 static void uli2a(unsigned long int num, unsigned int base, int uc, char *bf) {
   int n = 0;
-  unsigned int d = 1;
+  unsigned long d = 1; // ← use unsigned long
   while (num / d >= base)
     d *= base;
   while (d != 0) {
-    int dgt = num / d;
+    unsigned long dgt = num / d; // ← dgt should be unsigned long too
     num %= d;
     d /= base;
     if (n || dgt > 0 || d == 0) {
@@ -74,7 +74,7 @@ static char a2i(char ch, char **src, int base, int *nump) {
   int num = 0;
   int digit;
   while ((digit = a2d(ch)) >= 0) {
-    if (digit > base)
+    if (digit >= base)
       break;
     num = num * base + digit;
     ch = *p++;
@@ -97,7 +97,7 @@ static void putchw(void *putp, putcf putf, int n, char z, char *bf) {
 }
 
 void tfp_format(void *putp, putcf putf, char *fmt, va_list va) {
-  char bf[12];
+  char bf[32];
 
   char ch;
 

@@ -7,6 +7,8 @@
                 // free position. each register (Xn) 64 bits and 8 bits/byte =>
                 // 14 * 64 / 8 = offset of struct
 
+#define PID_MAX 65535
+
 #ifndef __ASSEMBLER__
 
 #define THREAD_SIZE 4096
@@ -49,6 +51,7 @@ struct task_struct {
   long counter;
   long priority;
   long preempt_count;
+  long pid;
   unsigned long stack;
   unsigned long flags;
   struct task_struct *next_task;
@@ -63,7 +66,7 @@ extern void switch_to(struct task_struct *next);
 extern void cpu_switch_to(struct task_struct *prev, struct task_struct *next);
 extern void exit_process(void);
 
-#define INIT_TASK {{0}, {{0}, 0, 0}, 0, 0, 1, 0, 0, PF_KTHREAD, 0}
+#define INIT_TASK {{0}, {{0}, 0, 0}, 0, 0, 1, 0, 0, 0, PF_KTHREAD, 0}
 
 #endif
 #endif

@@ -71,6 +71,7 @@ void exit_process() {
   if (current->stack) {
     free_page(current->stack);
   }
+
   preempt_enable();
   schedule();
 }

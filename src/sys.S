@@ -44,3 +44,8 @@ call_sys_malloc:
 call_sys_exit:
     syscall SYS_EXIT_NUMBER
     ret
+
+.globl call_sys_getpid
+call_sys_getpid:
+    syscall SYS_GETPID_NUMBER
+    ret

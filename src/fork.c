@@ -3,6 +3,39 @@
 #include "mm.h"
 #include "printf.h"
 #include "sched.h"
+#include "utils.h"
+#include <limits.h>
+
+#define ULONG_BITS (sizeof(unsigned long) * 8)
+#define PID_BITMAP_LENGTH CONST_DIV_CEIL(PID_MAX, ULONG_BITS)
+
+// Bitmap where each long = 64 pids (assuming 64 bit cpu)
+// The first value will be one and the rest will be zero. This is to account for
+// the init_task which has a pid of 0
+static unsigned long pid_bitmap[PID_BITMAP_LENGTH] = {1};
+
+long alloc_pid(void) {
+  for (unsigned long i = 0; i < PID_BITMAP_LENGTH; i++) {
+    unsigned long part = pid_bitmap[i];
+    if (part == ULONG_MAX)
+      continue;
+    unsigned long zero_idx = __builtin_ctzl(~part);
+    unsigned long pid = i * ULONG_BITS + zero_idx;
+    if (pid > PID_MAX)
+      continue; // validate bounds
+    pid_bitmap[i] |= (1UL << zero_idx);
+    return (long)pid;
+  }
+  return -1;
+}
+
+void free_pid(long pid) {
+  if (pid < 0)
+    return;
+  unsigned long idx = (unsigned long)pid / ULONG_BITS;
+  unsigned long bit = 1UL << ((unsigned long)pid % ULONG_BITS);
+  pid_bitmap[idx] &= ~bit;
+}
 
 int copy_process(unsigned long clone_flags, unsigned long fn,
                  unsigned long args, unsigned long stack, long pri) {
@@ -11,12 +44,22 @@ int copy_process(unsigned long clone_flags, unsigned long fn,
   preempt_disable();
   struct task_struct *p, *previous_task;
 
+  long pid = alloc_pid();
+  if (pid == -1) {
+    // No more pids left
+    // TODO: Debug print that it couldn't find an available PID
+    preempt_enable();
+    return -1;
+  }
+
   // Allocate a new page. The task_struct will be at the bottom of the page and
   // the rest of it will be used for the stack;
   p = (struct task_struct *)get_free_page();
 
-  if (!p)
+  if (!p) {
+    preempt_enable();
     return -1;
+  }
 
   struct pt_regs *childregs = task_pt_regs(p);
   memzero((unsigned long)childregs, sizeof(struct pt_regs));
@@ -38,6 +81,7 @@ int copy_process(unsigned long clone_flags, unsigned long fn,
   p->state = TASK_RUNNING;
   p->counter = p->priority;
   p->preempt_count = 1; // disable preemtion until schedule_tail
+  p->pid = pid;
 
   p->cpu_context.pc = (unsigned long)ret_from_fork;
   p->cpu_context.sp = (unsigned long)childregs;
@@ -51,10 +95,8 @@ int copy_process(unsigned long clone_flags, unsigned long fn,
 
   previous_task->next_task = p;
 
-  tfp_printf("%d", (int)(unsigned long)p);
-
   preempt_enable();
-  return (int)(unsigned long)p;
+  return pid;
 }
 
 int move_to_user_mode(unsigned long pc) {

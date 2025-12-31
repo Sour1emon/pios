@@ -20,5 +20,7 @@ unsigned long sys_malloc() {
 
 void sys_exit() { exit_process(); }
 
+long sys_getpid() { return current->pid; }
+
 void *const sys_call_table[__NR_syscalls] = {sys_write, sys_clone, sys_malloc,
-                                             sys_exit};
+                                             sys_exit, sys_getpid};

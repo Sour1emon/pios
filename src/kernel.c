@@ -21,8 +21,7 @@ void user_process1(char *array) {
 }
 
 void user_process() {
-  char buf[30] = {0};
-  tfp_sprintf(buf, "User process started\n\r");
+  char buf[40] = {0};
   call_sys_write(buf);
   unsigned long stack = call_sys_malloc();
   if (stack < 0) {

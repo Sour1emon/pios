@@ -17,6 +17,7 @@ void call_sys_write(char *buf);
 int call_sys_clone(unsigned long fn, unsigned long arg, unsigned long stack);
 unsigned long call_sys_malloc();
 void call_sys_exit();
+void call_sys_setel(long pri);
 
 #endif
 #endif

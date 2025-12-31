@@ -1,6 +1,7 @@
 #include "fork.h"
 #include "entry.h"
 #include "mm.h"
+#include "printf.h"
 #include "sched.h"
 
 int copy_process(unsigned long clone_flags, unsigned long fn,
@@ -50,8 +51,10 @@ int copy_process(unsigned long clone_flags, unsigned long fn,
 
   previous_task->next_task = p;
 
+  tfp_printf("%d", (int)(unsigned long)p);
+
   preempt_enable();
-  return 0;
+  return (int)(unsigned long)p;
 }
 
 int move_to_user_mode(unsigned long pc) {

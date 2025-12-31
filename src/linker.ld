@@ -1,24 +1,12 @@
-PHDRS
-{
-  text PT_LOAD FLAGS (5); /* PF_R | PF_X => 4+1 = 5 */
-  data PT_LOAD FLAGS (6); /* PF_R | PF_W => 4+2 = 6 */
-}
-
-ENTRY(_start)
 SECTIONS
 {
     . = 0x80000;
-    .text : {
-        *(.text.boot)
-        . = ALIGN(2048);  /* Ensure vector table alignment */
-        *(.text)
-    }
-    .rodata : { *(.rodata) } :text
-
-    . = ALIGN(0x8);
-    .data : { *(.data) } :data
-
-    bss_begin = .;
-    .bss (NOLOAD) : { *(.bss*) } :data
-    bss_end = .;
+	.text.boot : { *(.text.boot) }
+	.text : { *(.text) }
+	.rodata : { *(.rodata) }
+	.data : { *(.data) }
+	. = ALIGN(0x8);
+	bss_begin = .;
+	.bss : { *(.bss*) }
+	bss_end = .;
 }

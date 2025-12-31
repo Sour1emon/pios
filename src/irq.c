@@ -21,7 +21,7 @@ const char *entry_error_messages[] = {
 
     "SYNC_ERROR",          "SYSCALL_ERROR"};
 
-void enable_interrupt_controller() {
+void enable_interrupt_controller(void) {
   put32(ENABLE_IRQS_1, SYSTEM_TIMER_IRQ_1);
   put32(ENABLE_IRQS_2, UART0_IRQ);
 }

@@ -1,20 +1,48 @@
+#include "fork.h"
 #include "irq.h"
 #include "printf.h"
+#include "sched.h"
 #include "timer.h"
 #include "uart.h"
 #include "utils.h"
-#include <limits.h>
+
+void process(char *array) {
+  while (1) {
+    for (int i = 0; i < 5; i++) {
+      uart_send(array[i]);
+      delay(10000000);
+    }
+  }
+}
+
+extern struct task_struct *current;
 
 void kernel_main(void) {
   uart_init();
+
   init_printf(0, uart_putc);
+
   irq_vector_init();
+
   timer_init();
+
   enable_interrupt_controller();
+
   enable_irq();
 
-  printf("Long hex test: %ld \n", LONG_MIN);
+  int res = copy_process((unsigned long)&process, (unsigned long)"12345");
+  if (res != 0) {
+    printf("error while starting process 1");
+    return;
+  }
+
+  res = copy_process((unsigned long)&process, (unsigned long)"abcde");
+  if (res != 0) {
+    printf("error while starting process 2");
+    return;
+  }
 
   while (1) {
+    schedule();
   }
 }

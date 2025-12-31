@@ -1,5 +1,6 @@
 ARMGNU ?= ./arm-gnu-toolchain-15.2.rel1-darwin-arm64-aarch64-none-elf/bin/aarch64-none-elf
 
+
 COPS = -Wall -Wextra -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only
 ASMOPS = -Iinclude
 
@@ -55,3 +56,11 @@ run: kernel8.img $(BOOT_IMG)
 	@qemu-system-aarch64 -m 1024 -no-reboot -M raspi3b -serial stdio \
 		-kernel "$(CURDIR)/kernel8.img" \
 		-drive file="$(CURDIR)/$(BOOT_IMG)",format=raw,if=sd,media=disk
+
+.PHONY: debug
+debug: kernel8.img $(BOOT_IMG)
+	@command -v qemu-system-aarch64 >/dev/null 2>&1 || { echo "qemu-system-aarch64 not found in PATH"; exit 1; }
+	@qemu-system-aarch64 -m 1024 -no-reboot -M raspi3b -serial stdio \
+		-kernel "$(CURDIR)/kernel8.img" \
+		-drive file="$(CURDIR)/$(BOOT_IMG)",format=raw,if=sd,media=disk \
+		-d guest_errors,unimp,int

@@ -40,7 +40,7 @@ void uart_send(char c) {
   put32(UART0_DR, c);
 }
 
-char uart_recv() {
+char uart_recv(void) {
   while (get32(UART0_FR) & 0x10) {
   }
   return get32(UART0_DR);

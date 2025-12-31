@@ -32,13 +32,14 @@ stp	x22, x23, [sp, #16 * 11]
 stp	x24, x25, [sp, #16 * 12]
 stp	x26, x27, [sp, #16 * 13]
 stp	x28, x29, [sp, #16 * 14]
-str x30, [sp, #16 * 15]
 
 // Save ELR_EL1 and SPSR_EL1
-mrs	x0, elr_el1
-mrs	x1, spsr_el1
-stp	x0, x1, [sp, #16 * 15 + 8]
-ldp	x0, x1, [sp, #16 * 0]    // Restore x0 and x1
+mrs	x22, elr_el1
+mrs	x23, spsr_el1
+
+stp x30, x22, [sp, #16 * 15]
+str	x23, [sp, #16 * 16]
+ldp	x22, x23, [sp, #16 * 11]    // Restore x22 and x23
 .endm
 
 .macro kernel_exit
@@ -140,6 +141,13 @@ el1_irq:
 	kernel_entry
 	bl	handle_irq
 	kernel_exit
+
+
+.globl ret_from_fork
+ret_from_fork:
+    bl schedule_tail
+    mov x0, x20
+    blr x19
 
 .globl err_hang
 err_hang: b err_hang

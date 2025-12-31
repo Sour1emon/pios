@@ -52,7 +52,7 @@ void uart_send_string(char *str) {
   }
 }
 
-void putc(void *p, char c) { uart_send(c); }
+void uart_putc(void *_p __attribute__((unused)), char c) { uart_send(c); }
 
 void handle_uart_irq(void) {
   // Echo back all the characters we have received

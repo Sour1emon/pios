@@ -26,15 +26,26 @@ void enable_interrupt_controller(void) {
   put32(ENABLE_IRQS_2, UART0_IRQ);
 }
 
-void show_invalid_entry_message(int type, unsigned long esr,
-                                unsigned long address) {
-  // Bounds checking to prevent buffer overflow
+void show_invalid_entry_message(int type, unsigned long esr, unsigned long elr,
+                                unsigned long far) {
   size_t msg_count =
       sizeof(entry_error_messages) / sizeof(entry_error_messages[0]);
   const char *msg = (type >= 0 && (size_t)type < msg_count)
                         ? entry_error_messages[type]
                         : "UNKNOWN";
-  printf("%s, ESR: %lx, address: %lx\r\n", msg, esr, address);
+  printf("%s, ELR: 0x%lx, FAR: 0x%lx, ESR: 0x%lx\r\n", msg, elr, far, esr);
+
+  unsigned long ec = (esr >> 26) & 0x3f;
+  unsigned long fsc = esr & 0x3f;
+  unsigned long il = (esr >> 25) & 1;
+  unsigned long isv = (esr >> 24) & 1;
+  unsigned long wnr = (esr >> 6) & 1;
+  printf("  EC=0x%02lx, FSC=0x%02lx, IL=%lu, ISV=%lu, WnR=%lu\r\n", ec, fsc, il,
+         isv, wnr);
+
+  if (ec == 0x24 && fsc == 0x21)
+    printf("  -> alignment fault (likely unaligned %s access)\r\n",
+           wnr ? "write" : "read");
 }
 
 void handle_irq(void) {

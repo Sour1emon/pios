@@ -49,3 +49,8 @@ call_sys_exit:
 call_sys_getpid:
     syscall SYS_GETPID_NUMBER
     ret
+
+.globl call_sys_priority
+call_sys_priority:
+    syscall SYS_PRIORITY_NUMBER
+    ret

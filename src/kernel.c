@@ -10,6 +10,10 @@
 extern struct task_struct *current;
 
 void user_process1(char *array) {
+  long pid = call_sys_getpid();
+  if (pid == 2) {
+    call_sys_priority(5);
+  }
   char buf[2] = {0};
   while (1) {
     for (int i = 0; i < 5; i++) {

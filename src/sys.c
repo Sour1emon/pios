@@ -22,5 +22,11 @@ void sys_exit() { exit_process(); }
 
 long sys_getpid() { return current->pid; }
 
-void *const sys_call_table[__NR_syscalls] = {sys_write, sys_clone, sys_malloc,
-                                             sys_exit, sys_getpid};
+void sys_priority(long priority) {
+  if (priority > 0) {
+    current->priority = priority;
+  }
+}
+
+void *const sys_call_table[__NR_syscalls] = {
+    sys_write, sys_clone, sys_malloc, sys_exit, sys_getpid, sys_priority};

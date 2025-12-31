@@ -3,10 +3,7 @@
 
 static struct task_struct init_task = INIT_TASK;
 struct task_struct *current = &(init_task);
-struct task_struct *task[NR_TASKS] = {
-    &(init_task),
-};
-int nr_tasks = 1;
+struct task_struct *initial_task = &(init_task);
 
 void preempt_disable(void) { current->preempt_count++; }
 
@@ -14,29 +11,26 @@ void preempt_enable(void) { current->preempt_count--; }
 
 void _schedule(void) {
   preempt_disable();
-  int next, c;
-  struct task_struct *p;
+  int c;
+  struct task_struct *p, *next_task;
   while (1) {
     c = -1;
-    next = 0;
-    for (int i = 0; i < NR_TASKS; i++) {
-      p = task[i];
+    for (p = initial_task; p; p = p->next_task) {
       if (p && p->state == TASK_RUNNING && p->counter > c) {
         c = p->counter;
-        next = i;
+        next_task = p;
       }
     }
     if (c) {
       break;
     }
-    for (int i = 0; i < NR_TASKS; i++) {
-      p = task[i];
+    for (p = initial_task; p; p = p->next_task) {
       if (p) {
         p->counter = (p->counter >> 1) + p->priority;
       }
     }
   }
-  switch_to(task[next]);
+  switch_to(next_task);
   preempt_enable();
 }
 

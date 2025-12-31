@@ -7,7 +7,7 @@ int copy_process(unsigned long fn, unsigned long args, long pri) {
   // We don't want to reschedule to a new task in the middle of the copy_process
   // function
   preempt_disable();
-  struct task_struct *p;
+  struct task_struct *p, *previous_task;
 
   // Allocate a new page. The task_struct will be at the bottom of the page and
   // the rest of it will be used for the stack;
@@ -26,8 +26,16 @@ int copy_process(unsigned long fn, unsigned long args, long pri) {
   p->cpu_context.x20 = args;
   p->cpu_context.pc = (unsigned long)ret_from_fork;
   p->cpu_context.sp = (unsigned long)p + THREAD_SIZE;
-  int pid = nr_tasks++;
-  task[pid] = p;
+
+  p->next_task = 0;
+
+  previous_task = initial_task;
+
+  while (previous_task->next_task)
+    previous_task = previous_task->next_task;
+
+  previous_task->next_task = p;
+
   preempt_enable();
   return 0;
 }

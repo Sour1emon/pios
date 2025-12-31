@@ -42,7 +42,7 @@ void kernel_main(void) {
     return;
   }
 
-  res = copy_process((unsigned long)&process, (unsigned long)"abcde", 2);
+  res = copy_process((unsigned long)&process, (unsigned long)"abcde", 10);
   if (res != 0) {
     printf("error while starting process 2");
     return;

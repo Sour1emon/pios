@@ -28,7 +28,7 @@ void enable_interrupt_controller() {
 
 void show_invalid_entry_message(int type, unsigned long esr,
                                 unsigned long address) {
-  // Bounds checking (haha no funny buffer overflow bugs)
+  // Bounds checking to prevent buffer overflow
   size_t msg_count =
       sizeof(entry_error_messages) / sizeof(entry_error_messages[0]);
   const char *msg = (type >= 0 && (size_t)type < msg_count)
@@ -40,8 +40,29 @@ void show_invalid_entry_message(int type, unsigned long esr,
 void handle_irq(void) {
   unsigned int irq1 = get32(IRQ_PENDING_1);
   unsigned int irq2 = get32(IRQ_PENDING_2);
-  if (irq1 & SYSTEM_TIMER_IRQ_1)
+  int handled = 0;
+
+  if (irq1 & SYSTEM_TIMER_IRQ_1) {
     handle_timer_irq();
-  if (irq2 & UART0_IRQ)
+    if (irq2 & UART0_IRQ)
+      handled = 1;
+  }
+
+  if (irq2 & UART0_IRQ) {
     handle_uart_irq();
+    handled = 1;
+  }
+
+  unsigned int unhandled_irq1 = irq1 & ~SYSTEM_TIMER_IRQ_1;
+  unsigned int unhandled_irq2 = irq2 & ~UART0_IRQ;
+
+  if (!handled || unhandled_irq1 || unhandled_irq2) {
+    // TODO: Avoid printf here to prevent blocking in IRQ context
+    if (unhandled_irq1) {
+      printf("Unhandled IRQ in bank 1: 0x%x\r\n", unhandled_irq1);
+    }
+    if (unhandled_irq2) {
+      printf("Unhandled IRQ in bank 2: 0x%x\r\n", unhandled_irq2);
+    }
+  }
 }

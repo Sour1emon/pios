@@ -3,7 +3,7 @@
 
 #include "peripherals/base.h"
 
-// https://www.raspberrypi.org/app/uploads/2012/02/BCM2835-ARM-Peripherals.pdf#page=172
+// https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf#page=172
 #define SYS_TIMER_BASE (PBASE + 0x3000)
 #define TIMER_CS (SYS_TIMER_BASE + 0x0)
 #define TIMER_CLO (SYS_TIMER_BASE + 0x4)

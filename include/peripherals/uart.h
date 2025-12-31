@@ -5,7 +5,7 @@
 
 #define UART0_BASE (PBASE + 0x201000)
 
-// https://www.raspberrypi.org/app/uploads/2012/02/BCM2835-ARM-Peripherals.pdf#page=177
+// https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf#page=177
 
 // The offsets for reach register for the UART.
 #define UART0_DR (UART0_BASE + 0x00)

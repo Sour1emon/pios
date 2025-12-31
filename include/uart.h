@@ -8,4 +8,6 @@ void uart_send_string(char *str);
 
 void putc(void *p, char c);
 
+void handle_uart_irq(void);
+
 #endif /*_UART_H */

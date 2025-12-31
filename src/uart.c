@@ -25,7 +25,9 @@ void uart_init(void) {
   put32(UART0_FBRD, 3);
   put32(UART0_LCRH,
         (1 << 4) | (1 << 5) | (1 << 6)); // 8 bit word length, enable FIFO
-  put32(UART0_IMSC, 0);                  // Mask all interrupts
+  put32(UART0_IMSC,
+        (1 << 4)); // Mask all interrupts except for the RXIM (UART Receive
+                   // Interrupt)
 
   put32(UART0_CR,
         (1 << 0) | (1 << 8) |
@@ -51,3 +53,13 @@ void uart_send_string(char *str) {
 }
 
 void putc(void *p, char c) { uart_send(c); }
+
+void handle_uart_irq(void) {
+  // Echo back all the characters we have received
+  while (!(get32(UART0_FR) & 0x10)) { // RXFE bit - RX FIFO not empty
+    char c = get32(UART0_DR);
+    uart_send(c);
+  }
+
+  put32(UART0_ICR, (1 << 4)); // Clear the interrupt just in case
+}

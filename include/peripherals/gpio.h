@@ -3,11 +3,14 @@
 
 #include "peripherals/base.h"
 
-// https://www.raspberrypi.org/app/uploads/2012/02/BCM2835-ARM-Peripherals.pdf#page=90
-#define GPFSEL1 (PBASE + 0x00200004)
-#define GPSET0 (PBASE + 0x0020001C)
-#define GPCLR0 (PBASE + 0x00200028)
-#define GPPUD (PBASE + 0x00200094)
-#define GPPUDCLK0 (PBASE + 0x00200098)
+// https://cs140e.sergio.bz/docs/BCM2837-ARM-Peripherals.pdf#page=90
+
+#define GPIO_BASE (PBASE + 0x00200000)
+
+#define GPFSEL1 (GPIO_BASE + 0x4)
+#define GPSET0 (GPIO_BASE + 0x1C)
+#define GPCLR0 (GPIO_BASE + 0x28)
+#define GPPUD (GPIO_BASE + 0x94)
+#define GPPUDCLK0 (GPIO_BASE + 0x98)
 
 #endif /*_P_GPIO_H */

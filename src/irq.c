@@ -2,6 +2,7 @@
 #include "peripherals/irq.h"
 #include "printf.h"
 #include "timer.h"
+#include "uart.h"
 #include "utils.h"
 
 const char *entry_error_messages[] = {
@@ -19,7 +20,10 @@ const char *entry_error_messages[] = {
 
     "SYNC_ERROR",          "SYSCALL_ERROR"};
 
-void enable_interrupt_controller() { put32(ENABLE_IRQS_1, SYSTEM_TIMER_IRQ_1); }
+void enable_interrupt_controller() {
+  put32(ENABLE_IRQS_1, SYSTEM_TIMER_IRQ_1);
+  put32(ENABLE_IRQS_2, UART0_IRQ);
+}
 
 void show_invalid_entry_message(int type, unsigned long esr,
                                 unsigned long address) {
@@ -28,12 +32,10 @@ void show_invalid_entry_message(int type, unsigned long esr,
 }
 
 void handle_irq(void) {
-  unsigned int irq = get32(IRQ_PENDING_1);
-  switch (irq) {
-  case (SYSTEM_TIMER_IRQ_1):
+  unsigned int irq1 = get32(IRQ_PENDING_1);
+  unsigned int irq2 = get32(IRQ_PENDING_2);
+  if (irq1 & SYSTEM_TIMER_IRQ_1)
     handle_timer_irq();
-    break;
-  default:
-    printf("Unknown pending irq: %x\r\n", irq);
-  }
+  if (irq2 & UART0_IRQ)
+    handle_uart_irq();
 }

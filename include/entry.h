@@ -1,8 +1,8 @@
 #ifndef _ENTRY_H
 #define _ENTRY_H
 // Size of all saved registers. Stack pointer must remain 16 byte aligned so
-// thats why its 256 instead of 248
-#define S_FRAME_SIZE 256
+// thats why its 272 instead of 264
+#define S_FRAME_SIZE 272
 
 #define SYNC_INVALID_EL1t 0
 #define IRQ_INVALID_EL1t 1

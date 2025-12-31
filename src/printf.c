@@ -8,11 +8,11 @@ static void *stdout_putp;
 
 static void uli2a(unsigned long int num, unsigned int base, int uc, char *bf) {
   int n = 0;
-  unsigned long d = 1; // ← use unsigned long
+  unsigned long d = 1;
   while (num / d >= base)
     d *= base;
   while (d != 0) {
-    unsigned long dgt = num / d; // ← dgt should be unsigned long too
+    unsigned long dgt = num / d;
     num %= d;
     d /= base;
     if (n || dgt > 0 || d == 0) {
@@ -24,11 +24,15 @@ static void uli2a(unsigned long int num, unsigned int base, int uc, char *bf) {
 }
 
 static void li2a(long num, char *bf) {
+  unsigned long unum;
   if (num < 0) {
-    num = -num;
     *bf++ = '-';
+    /* Handle LONG_MIN without signed overflow */
+    unum = (unsigned long)(-(num + 1)) + 1;
+  } else {
+    unum = (unsigned long)num;
   }
-  uli2a(num, 10, 0, bf);
+  uli2a(unum, 10, 0, bf);
 }
 
 #endif
@@ -51,11 +55,15 @@ static void ui2a(unsigned int num, unsigned int base, int uc, char *bf) {
 }
 
 static void i2a(int num, char *bf) {
+  unsigned int unum;
   if (num < 0) {
-    num = -num;
     *bf++ = '-';
+    /* Handle INT_MIN without signed overflow */
+    unum = (unsigned int)(-(num + 1)) + 1;
+  } else {
+    unum = (unsigned int)num;
   }
-  ui2a(num, 10, 0, bf);
+  ui2a(unum, 10, 0, bf);
 }
 
 static int a2d(char ch) {
@@ -140,7 +148,7 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va) {
       case 'd': {
 #ifdef PRINTF_LONG_SUPPORT
         if (lng)
-          li2a(va_arg(va, unsigned long int), bf);
+          li2a(va_arg(va, long int), bf);
         else
 #endif
           i2a(va_arg(va, int), bf);
@@ -165,6 +173,7 @@ void tfp_format(void *putp, putcf putf, char *fmt, va_list va) {
         break;
       case '%':
         putf(putp, ch);
+        break;
       default:
         break;
       }

@@ -1,9 +1,9 @@
 #include "irq.h"
-#include "limits.h"
 #include "printf.h"
 #include "timer.h"
 #include "uart.h"
 #include "utils.h"
+#include <limits.h>
 
 void kernel_main(void) {
   uart_init();
@@ -13,7 +13,7 @@ void kernel_main(void) {
   enable_interrupt_controller();
   enable_irq();
 
-  printf("Long hex test: %lX\n", ULONG_MAX);
+  printf("Long hex test: %ld \n", LONG_MIN);
 
   while (1) {
   }

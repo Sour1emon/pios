@@ -1,10 +1,10 @@
 #include "irq.h"
 #include "peripherals/irq.h"
 #include "printf.h"
-#include "stddef.h"
 #include "timer.h"
 #include "uart.h"
 #include "utils.h"
+#include <stddef.h>
 
 const char *entry_error_messages[] = {
     "SYNC_INVALID_EL1t",   "IRQ_INVALID_EL1t",

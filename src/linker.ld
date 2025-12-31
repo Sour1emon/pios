@@ -8,7 +8,11 @@ ENTRY(_start)
 SECTIONS
 {
     . = 0x80000;
-    .text : { *(.text.boot) *(.text) } :text
+    .text : {
+        *(.text.boot)
+        . = ALIGN(2048);  /* Ensure vector table alignment */
+        *(.text)
+    }
     .rodata : { *(.rodata) } :text
 
     . = ALIGN(0x8);

@@ -3,9 +3,9 @@
 
 #include "peripherals/base.h"
 
-#define UART0_OFFSET 0x201000
+#define UART0_BASE (PBASE + 0x201000)
 
-#define UART0_BASE PBASE + UART0_OFFSET
+// https://www.raspberrypi.org/app/uploads/2012/02/BCM2835-ARM-Peripherals.pdf#page=177
 
 // The offsets for reach register for the UART.
 #define UART0_DR (UART0_BASE + 0x00)

@@ -3,6 +3,7 @@
 
 #include "peripherals/base.h"
 
+// https://www.raspberrypi.org/app/uploads/2012/02/BCM2835-ARM-Peripherals.pdf#page=90
 #define GPFSEL1 (PBASE + 0x00200004)
 #define GPSET0 (PBASE + 0x0020001C)
 #define GPCLR0 (PBASE + 0x00200028)

@@ -26,8 +26,10 @@ void uart_init(void) {
   put32(UART0_LCRH,
         (1 << 4) | (1 << 5) | (1 << 6)); // 8 bit word length, enable FIFO
   put32(UART0_IMSC, 0);                  // Mask all interrupts
+
   put32(UART0_CR,
-        (1 << 0) | (1 << 8) | (1 << 9)); // enable UART0, receive, transmit
+        (1 << 0) | (1 << 8) |
+            (1 << 9)); // enable UART0, receive enable, transmit enable
 }
 
 void uart_send(char c) {
@@ -48,4 +50,4 @@ void uart_send_string(char *str) {
   }
 }
 
-void putc(void * p, char c) { uart_send(c); }
+void putc(void *p, char c) { uart_send(c); }

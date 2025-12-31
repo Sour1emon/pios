@@ -14,6 +14,12 @@ _start:
 proc_hang:
 	b 	proc_hang
 
+	// This allows us to use SIMD and floating point numbers
+.macro disable_fp_trap
+ldr x0, =CPACR_VALUE // Disable FP/SIMD trap
+msr cpacr_el1, x0
+.endm
+
 master:
 	mrs	x0, CurrentEL
 	lsr	x0, x0, #2
@@ -36,6 +42,8 @@ el3_entry:
 	ldr	x0, =SPSR_VALUE
 	msr	spsr_el3, x0
 
+	disable_fp_trap
+
 	adr	x0, el1_entry
 	msr	elr_el3, x0
 
@@ -51,12 +59,16 @@ el2_entry:
 	ldr	x0, =SPSR_VALUE
 	msr	spsr_el2, x0
 
+	disable_fp_trap
+
 	adr	x0, el1_entry
 	msr	elr_el2, x0
 
 	eret
 
 el1_entry:
+    disable_fp_trap
+
     adr	x0, bss_begin
 	adr	x1, bss_end
 	sub	x1, x1, x0

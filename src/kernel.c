@@ -29,6 +29,12 @@ void kernel_main(void) {
   enable_interrupt_controller();
 
   enable_irq();
+  double x = 5.0;
+  x /= 3;
+
+  int a = (int)x;
+
+  printf("%d", a);
 
   int res = copy_process((unsigned long)&process, (unsigned long)"12345", 1);
   if (res != 0) {

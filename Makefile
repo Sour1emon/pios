@@ -1,7 +1,7 @@
 ARMGNU ?= ./arm-gnu-toolchain-15.2.rel1-darwin-arm64-aarch64-none-elf/bin/aarch64-none-elf
 
 
-COPS = -Wall -Wextra -nostdlib -nostartfiles -ffreestanding -Iinclude -mgeneral-regs-only
+COPS = -Wall -Wextra -nostdlib -nostartfiles -ffreestanding -Iinclude
 ASMOPS = -Iinclude
 
 BUILD_DIR = build

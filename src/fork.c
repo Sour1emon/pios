@@ -2,7 +2,8 @@
 #include "entry.h"
 #include "mm.h"
 #include "sched.h"
-int copy_process(unsigned long fn, unsigned long args) {
+
+int copy_process(unsigned long fn, unsigned long args, long pri) {
   // We don't want to reschedule to a new task in the middle of the copy_process
   // function
   preempt_disable();
@@ -16,7 +17,7 @@ int copy_process(unsigned long fn, unsigned long args) {
     return 1;
 
   // Initialize the task's properties
-  p->priority = current->priority;
+  p->priority = pri;
   p->state = TASK_RUNNING;
   p->counter = p->priority;
   p->preempt_count = 1; // disable preemtion until schedule_tail

@@ -1,4 +1,5 @@
 #include "irq.h"
+#include "arm/sysregs.h"
 #include "peripherals/irq.h"
 #include "printf.h"
 #include "timer.h"
@@ -42,6 +43,20 @@ void show_invalid_entry_message(int type, unsigned long esr, unsigned long elr,
   unsigned long wnr = (esr >> 6) & 1;
   printf("  EC=0x%02lx, FSC=0x%02lx, IL=%lu, ISV=%lu, WnR=%lu\r\n", ec, fsc, il,
          isv, wnr);
+
+  if (ec == ESR_ELx_EC_SVC64) {
+    printf("  -> SVC64 (system call)\r\n");
+  } else if (ec == 0x18) {
+    printf("  -> trapped system register access from lower EL (MRS/MSR)\r\n");
+  } else if (ec == 0x00) {
+    printf("  -> Illegal/unknown instruction (likely privileged register "
+           "access or unimplemented opcode)\r\n");
+    if (elr) {
+      unsigned int instr =
+          *(unsigned int *)elr; // beware of user pointers in a real kernel
+      printf("  instruction @ ELR: 0x%08x\r\n", instr);
+    }
+  }
 
   if (ec == 0x24 && fsc == 0x21)
     printf("  -> alignment fault (likely unaligned %s access)\r\n",

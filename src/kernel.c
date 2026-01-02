@@ -1,78 +1,35 @@
+#include <stddef.h>
+#include <stdint.h>
+
 #include "fork.h"
 #include "irq.h"
 #include "printf.h"
 #include "sched.h"
-#include "sys.h"
 #include "timer.h"
 #include "uart.h"
+#include "user.h"
 #include "utils.h"
 
-extern struct task_struct *current;
-
-void user_process1(char *array) {
-  long pid = call_sys_getpid();
-  if (pid == 2) {
-    call_sys_priority(5);
-  }
-  char buf[2] = {0};
-  while (1) {
-    for (int i = 0; i < 5; i++) {
-      buf[0] = array[i];
-      call_sys_write(buf);
-      delay(10000000);
-    }
-  }
-}
-
-void user_process() {
-  char buf[40] = {0};
-  call_sys_write(buf);
-  unsigned long stack = call_sys_malloc();
-  if (stack == (unsigned long)-1) {
-    printf("Error while allocating stack for process 1\n\r");
-    return;
-  }
-  int err = call_sys_clone((unsigned long)&user_process1,
-                           (unsigned long)"12345", stack);
-  if (err < 0) {
-    printf("Error while clonning process 1\n\r");
-    return;
-  }
-  stack = call_sys_malloc();
-  if (stack == (unsigned long)-1) {
-    printf("Error while allocating stack for process 1\n\r");
-    return;
-  }
-  err = call_sys_clone((unsigned long)&user_process1, (unsigned long)"abcde",
-                       stack);
-  if (err < 0) {
-    printf("Error while clonning process 2\n\r");
-    return;
-  }
-  call_sys_exit();
-}
-
 void kernel_process() {
-  int err = move_to_user_mode((unsigned long)&user_process);
+  printf("Kernel process started. EL %d\r\n", get_el());
+  unsigned long begin = (unsigned long)&user_begin;
+  unsigned long end = (unsigned long)&user_end;
+  unsigned long process = (unsigned long)&user_process;
+  int err = move_to_user_mode(begin, end - begin, process - begin);
   if (err < 0) {
     printf("Error while moving process to user mode\n\r");
   }
 }
 
-void kernel_main(void) {
+void kernel_main() {
   uart_init();
-
-  init_printf(0, uart_putc);
-
+  init_printf(NULL, uart_putc);
   irq_vector_init();
-
   timer_init();
-
   enable_interrupt_controller();
-
   enable_irq();
 
-  int res = copy_process(PF_KTHREAD, (unsigned long)&kernel_process, 0, 0, 1);
+  int res = copy_process(PF_KTHREAD, (unsigned long)&kernel_process, 0, 1);
   if (res < 0) {
     printf("error while starting kernel process");
     return;

@@ -1,6 +1,7 @@
 #include "sched.h"
 #include "irq.h"
 #include "mm.h"
+#include "utils.h"
 
 static struct task_struct init_task = INIT_TASK;
 struct task_struct *current = &(init_task);
@@ -46,7 +47,7 @@ void switch_to(struct task_struct *next) {
   }
   struct task_struct *prev = current;
   current = next;
-
+  set_pgd(next->mm.pgd);
   cpu_switch_to(prev, next);
 }
 
@@ -68,10 +69,6 @@ void timer_tick(void) {
 void exit_process() {
   preempt_disable();
   current->state = TASK_ZOMBIE;
-  if (current->stack) {
-    free_page(current->stack);
-  }
-
   preempt_enable();
   schedule();
 }

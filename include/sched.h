@@ -44,6 +44,21 @@ struct cpu_context {
   unsigned long pc;
 };
 
+#define MAX_PROCESS_PAGES 16
+
+struct user_page {
+  unsigned long phys_addr;
+  unsigned long virt_addr;
+};
+
+struct mm_struct {
+  unsigned long pgd;
+  int user_pages_count;
+  struct user_page user_pages[MAX_PROCESS_PAGES];
+  int kernel_pages_count;
+  unsigned long kernel_pages[MAX_PROCESS_PAGES];
+};
+
 struct task_struct {
   struct cpu_context cpu_context;
   struct fpsimd_context fpsimd_context;
@@ -52,8 +67,8 @@ struct task_struct {
   long priority;
   long preempt_count;
   long pid;
-  unsigned long stack;
   unsigned long flags;
+  struct mm_struct mm;
   struct task_struct *next_task;
 };
 
@@ -66,7 +81,20 @@ extern void switch_to(struct task_struct *next);
 extern void cpu_switch_to(struct task_struct *prev, struct task_struct *next);
 extern void exit_process(void);
 
-#define INIT_TASK {{0}, {{0}, 0, 0}, 0, 0, 1, 0, 0, 0, PF_KTHREAD, 0}
+#define INIT_TASK                                                              \
+  {/* cpu_context: x19..pc (13 regs) */                                        \
+   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                        \
+    0}, /* fpsimd_context: vregs[32], fpsr, fpcr */                            \
+   {{0}, 0, 0},                                                                \
+   /* state */ 0,                                                              \
+   /* counter */ 15,                                                           \
+   /* priority */ 0,                                                           \
+   /* preempt_count */ 0,                                                      \
+   /* pid */ 0,                                                                \
+   /* flags */ PF_KTHREAD, /* mm: pgd, user_pages_count, user_pages[],         \
+                              kernel_pages_count, kernel_pages[] */            \
+   {0, 0, {{0}}, 0, {0}},                                                      \
+   /* next_task */ 0}
 
 #endif
 #endif

@@ -6,9 +6,7 @@
 
 void sys_write(char *buf) { printf("%s", buf); }
 
-int sys_clone(unsigned long stack) {
-  return copy_process(0, 0, 0, stack, current->priority);
-}
+int sys_fork(void) { return copy_process(0, 0, 0, current->priority); }
 
 unsigned long sys_malloc() {
   unsigned long page_addr = get_free_page();
@@ -29,4 +27,4 @@ void sys_priority(long priority) {
 }
 
 void *const sys_call_table[__NR_syscalls] = {
-    sys_write, sys_clone, sys_malloc, sys_exit, sys_getpid, sys_priority};
+    sys_write, sys_fork, sys_malloc, sys_exit, sys_getpid, sys_priority};

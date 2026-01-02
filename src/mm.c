@@ -1,6 +1,7 @@
 #include "mm.h"
 #include "arm/mmu.h"
 #include "peripherals/base.h"
+#include "printf.h"
 #include "sched.h"
 
 static unsigned short mem_map[PAGING_PAGES] = {
@@ -136,20 +137,17 @@ int copy_virt_memory(struct task_struct *dst) {
   return 0;
 }
 
-static int ind = 1;
-
 int do_mem_abort(unsigned long addr, unsigned long esr) {
   unsigned long dfs = (esr & 0b111111);
   if ((dfs & 0b111100) == 0b100) {
+    if (current->mm.user_pages_count >= MAX_PROCESS_PAGES) {
+      return -1;
+    }
     unsigned long page = get_free_page();
     if (page == 0) {
       return -1;
     }
     map_page(current, addr & PAGE_MASK, page);
-    ind++;
-    if (ind > 2) {
-      return -1;
-    }
     return 0;
   }
   return -1;

@@ -1,5 +1,7 @@
 #include "sched.h"
+#include "fork.h"
 #include "irq.h"
+#include "mm.h"
 #include "utils.h"
 
 static struct task_struct init_task = INIT_TASK;
@@ -68,6 +70,7 @@ void timer_tick(void) {
 void exit_process() {
   preempt_disable();
   current->state = TASK_ZOMBIE;
+  free_pid(current->pid);
   preempt_enable();
   schedule();
 }

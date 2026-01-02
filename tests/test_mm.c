@@ -12,7 +12,6 @@
  */
 
 #include "mm.h"
-#include "printf.h"
 #include "sched.h"
 #include "test.h"
 #include <stddef.h>

@@ -1,7 +1,8 @@
 ARMGNU ?= ./arm-gnu-toolchain-15.2.rel1-darwin-arm64-aarch64-none-elf/bin/aarch64-none-elf
 
 
-COPS = -Wall -Wextra -nostdlib -nostartfiles -ffreestanding -mstrict-align -Iinclude
+COPS = -Wall -Wextra -nostdlib -nostartfiles -ffreestanding -mstrict-align -Iinclude -g
+COPS_DEBUG = $(COPS) -DDEBUG
 COPS_TEST = $(COPS) -DTEST_MODE
 ASMOPS = -Iinclude
 
@@ -23,6 +24,15 @@ $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 
 # Compile assembly files quietly, only show warnings/errors
 $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
+	@$(ARMGNU)-gcc $(ASMOPS) -MMD -c $< -o $@ >/dev/null
+
+# Compile C files for debug build (with DEBUG flag)
+$(BUILD_DIR)/debug/%_c.o: $(SRC_DIR)/%.c
+	@mkdir -p $(@D)
+	@$(ARMGNU)-gcc $(COPS_DEBUG) -MMD -c $< -o $@ >/dev/null
+
+# Compile assembly files for debug build
+$(BUILD_DIR)/debug/%_s.o: $(SRC_DIR)/%.S
 	@$(ARMGNU)-gcc $(ASMOPS) -MMD -c $< -o $@ >/dev/null
 
 # Compile test C files quietly (with TEST_MODE flag)
@@ -48,6 +58,10 @@ TEST_C_FILES = $(wildcard $(TEST_DIR)/*.c)
 OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_c.o)
 OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
 
+# Object files for debug kernel (compiled with DEBUG flag)
+DEBUG_OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/debug/%_c.o)
+DEBUG_OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/debug/%_s.o)
+
 # Object files for test kernel (includes test files, compiled with TEST_MODE)
 TEST_OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/test_src/%_c.o)
 TEST_OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/test_src/%_s.o)
@@ -61,6 +75,11 @@ DEP_FILES += $(TEST_OBJ_FILES:%.o=%.d)
 kernel8.img: check-toolchain $(SRC_DIR)/linker.ld $(OBJ_FILES)
 	@$(ARMGNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel8.elf $(OBJ_FILES) >/dev/null
 	@$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
+
+# Build debug kernel with stack traces enabled
+kernel8-debug.img: check-toolchain $(SRC_DIR)/linker.ld $(DEBUG_OBJ_FILES)
+	@$(ARMGNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel8-debug.elf $(DEBUG_OBJ_FILES) >/dev/null
+	@$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8-debug.elf -O binary kernel8-debug.img
 
 # Build test kernel with test files included
 kernel8-test.img: check-toolchain $(SRC_DIR)/linker.ld $(TEST_OBJ_FILES)
@@ -76,6 +95,7 @@ $(BOOT_IMG): $(CONFIG_TXT)
 .PHONY: check-toolchain
 check-toolchain:
 	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)/debug
 	@mkdir -p $(BUILD_DIR)/tests
 	@mkdir -p $(BUILD_DIR)/test_src
 	@printf ".arch armv8-a\nmrs x0, mpidr_el1\n" > $(BUILD_DIR)/check.S
@@ -88,6 +108,14 @@ run: kernel8.img $(BOOT_IMG)
 	@command -v qemu-system-aarch64 >/dev/null 2>&1 || { echo "qemu-system-aarch64 not found in PATH"; exit 1; }
 	@qemu-system-aarch64 -m 1024 -no-reboot -M raspi3b -serial stdio \
 		-kernel "$(CURDIR)/kernel8.img" \
+		-drive file="$(CURDIR)/$(BOOT_IMG)",format=raw,if=sd,media=disk
+
+.PHONY: run-debug
+run-debug: kernel8-debug.img $(BOOT_IMG)
+	@command -v qemu-system-aarch64 >/dev/null 2>&1 || { echo "qemu-system-aarch64 not found in PATH"; exit 1; }
+	@echo "Running kernel in DEBUG mode (with stack traces)..."
+	@qemu-system-aarch64 -m 1024 -no-reboot -M raspi3b -serial stdio \
+		-kernel "$(CURDIR)/kernel8-debug.img" \
 		-drive file="$(CURDIR)/$(BOOT_IMG)",format=raw,if=sd,media=disk
 
 .PHONY: debug
@@ -121,3 +149,8 @@ test-debug: kernel8-test.img $(BOOT_IMG)
 .PHONY: build-test
 build-test: kernel8-test.img
 	@echo "Test kernel built: kernel8-test.img"
+
+# Just build debug kernel without running
+.PHONY: build-debug
+build-debug: kernel8-debug.img
+	@echo "Debug kernel built: kernel8-debug.img (with stack traces enabled)"

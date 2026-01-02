@@ -13,7 +13,6 @@
 #include "mm.h"
 #include "peripherals/base.h"
 #include "printf.h"
-#include "sched.h"
 #include "test.h"
 #include "utils.h"
 

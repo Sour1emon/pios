@@ -1,12 +1,29 @@
 #include "mm.h"
 #include "arm/mmu.h"
 #include "peripherals/base.h"
-#include "printf.h"
 #include "sched.h"
+#include "utils.h"
+#include <stddef.h>
 
-static unsigned short mem_map[PAGING_PAGES] = {
+#define ULONG_BITS (sizeof(unsigned long) * 8)
+#define MEM_MAP_BITMAP_LENGTH CONST_DIV_CEIL(PAGING_PAGES, ULONG_BITS)
+
+static unsigned long mem_map[MEM_MAP_BITMAP_LENGTH] = {
     0,
 };
+
+#define GET_MEM_BIT(bitmap, bit)                                               \
+  ((bitmap[bit / ULONG_BITS] >> (bit % ULONG_BITS)) & 0x1)
+
+#define SET_MEM_BIT(bitmap, bit, value)                                        \
+  do {                                                                         \
+    size_t _index = (bit) / ULONG_BITS;                                        \
+    size_t _pos = (bit) % ULONG_BITS;                                          \
+    if (value)                                                                 \
+      (bitmap)[_index] |= 1UL << _pos;                                         \
+    else                                                                       \
+      (bitmap)[_index] &= ~(1UL << _pos);                                      \
+  } while (0)
 
 unsigned long allocate_kernel_page() {
   unsigned long page = get_free_page();
@@ -27,8 +44,8 @@ unsigned long allocate_user_page(struct task_struct *task, unsigned long va) {
 
 unsigned long get_free_page() {
   for (unsigned long i = 0; i < PAGING_PAGES; i++) {
-    if (mem_map[i] == 0) {
-      mem_map[i] = 1;
+    if (GET_MEM_BIT(mem_map, i) == 0) {
+      SET_MEM_BIT(mem_map, i, 1);
       unsigned long page = LOW_MEMORY + i * PAGE_SIZE;
       memzero(page + VA_START, PAGE_SIZE);
       return page;
@@ -37,7 +54,9 @@ unsigned long get_free_page() {
   return 0;
 }
 
-void free_page(unsigned long p) { mem_map[(p - LOW_MEMORY) / PAGE_SIZE] = 0; }
+void free_page(unsigned long p) {
+  SET_MEM_BIT(mem_map, (p - LOW_MEMORY) / PAGE_SIZE, 0);
+}
 
 unsigned long map_table(unsigned long *table, unsigned long shift,
                         unsigned long va, int *new_table) {

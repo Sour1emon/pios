@@ -4,10 +4,10 @@ SECTIONS
 	.text.boot : { *(.text.boot) }
 	. = ALIGN(0x00001000);
 	user_begin = .;
-	.text.user : { build/user* (.text) }
-	.rodata.user : { build/user* (.rodata) }
-	.data.user : { build/user* (.data) }
-	.bss.user : { build/user* (.bss) }
+	.text.user : { build/*/user* (.text) build/user* (.text) }
+	.rodata.user : { build/*/user* (.rodata) build/user* (.rodata) }
+	.data.user : { build/*/user* (.data) build/user* (.data) }
+	.bss.user : { build/*/user* (.bss) build/user* (.bss) }
 	user_end = .;
 	.text :  { *(.text) }
 	.rodata : { *(.rodata) }

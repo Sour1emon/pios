@@ -39,3 +39,8 @@ get_pgd:
 	msr	ttbr0_el1, x0
 	ldr x0, [x1]
 	ret
+
+.globl wfe
+wfe:
+  wfe
+  ret

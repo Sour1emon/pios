@@ -50,8 +50,10 @@ int copy_process(unsigned long clone_flags, unsigned long fn, unsigned long arg,
   }
 
   unsigned long page = allocate_kernel_page();
-  if (!page)
+  if (!page) {
+    free_pid(pid);
     return -1;
+  }
 
   p = (struct task_struct *)page;
 

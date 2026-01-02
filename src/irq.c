@@ -28,7 +28,14 @@ void enable_interrupt_controller(void) {
 }
 
 void show_invalid_entry_message(int type, unsigned long esr, unsigned long elr,
-                                unsigned long far) {
+                                unsigned long far, unsigned long fp,
+                                unsigned long lr) {
+#ifndef DEBUG
+  // Suppress unused parameter warnings in non-debug builds
+  (void)fp;
+  (void)lr;
+#endif
+
   size_t msg_count =
       sizeof(entry_error_messages) / sizeof(entry_error_messages[0]);
   const char *msg = (type >= 0 && (size_t)type < msg_count)
@@ -61,6 +68,11 @@ void show_invalid_entry_message(int type, unsigned long esr, unsigned long elr,
   if (ec == 0x24 && fsc == 0x21)
     printf("  -> alignment fault (likely unaligned %s access)\r\n",
            wnr ? "write" : "read");
+
+#ifdef DEBUG
+  // Print stack trace (only in debug mode)
+  print_stack_trace(fp, lr, elr);
+#endif
 }
 
 void handle_irq(void) {
@@ -91,4 +103,62 @@ void handle_irq(void) {
       printf("Unhandled IRQ in bank 2: 0x%x\r\n", unhandled_irq2);
     }
   }
+}
+
+// Add this function to walk the stack frames
+void print_stack_trace(unsigned long fp, unsigned long lr, unsigned long elr) {
+  printf("\r\nStack trace:\r\n");
+  printf("  [0] 0x%lx (exception address)\r\n", elr);
+
+  // Print the link register from the exception context
+  if (lr != 0 && lr != elr) {
+    printf("  [1] 0x%lx (link register)\r\n", lr);
+  }
+
+  int frame = 2;
+  unsigned long prev_fp = 0;
+  unsigned long prev_lr = lr;
+
+  // Maximum 20 frames to prevent infinite loops
+  for (int i = 0; i < 20 && fp != 0; i++) {
+    // Detect loops - if FP hasn't changed, we're stuck
+    if (fp == prev_fp) {
+      printf("  (stack trace stopped: frame pointer loop detected)\r\n");
+      break;
+    }
+
+    // Frame pointer should be reasonable (in kernel space)
+    // and aligned to 16 bytes
+    if (fp < 0xffff000000000000 || fp > 0xffff000001000000 || (fp & 0xf) != 0) {
+      printf("  (stack trace stopped: invalid frame pointer 0x%lx)\r\n", fp);
+      break;
+    }
+
+    // On ARM64, the frame record is: [FP, LR]
+    // FP points to the previous FP
+    // LR is at FP + 8
+    unsigned long *frame_ptr = (unsigned long *)fp;
+    unsigned long next_fp = frame_ptr[0];
+    unsigned long saved_lr = frame_ptr[1];
+
+    // Check if LR is valid and not a repeat
+    if (saved_lr == 0 || saved_lr == prev_lr) {
+      break;
+    }
+
+    // LR should be in kernel text segment
+    if (saved_lr < 0xffff000000080000 || saved_lr > 0xffff000000090000) {
+      printf("  (stack trace stopped: invalid return address 0x%lx)\r\n",
+             saved_lr);
+      break;
+    }
+
+    printf("  [%d] 0x%lx\r\n", frame, saved_lr);
+
+    prev_fp = fp;
+    prev_lr = saved_lr;
+    fp = next_fp;
+    frame++;
+  }
+  printf("\r\n");
 }

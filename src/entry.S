@@ -9,8 +9,9 @@
    mrs    x1, esr_el1
    mrs    x2, elr_el1
    mrs    x3, far_el1
+   mov    x4, x29
+   mov    x5, x30
    bl     show_invalid_entry_message
-   bl     exit_process
    b      err_hang
 .endm
 

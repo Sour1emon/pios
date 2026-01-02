@@ -55,6 +55,7 @@ void kernel_main() {
   }
 
   while (1) {
+    wfe();
     schedule();
   }
 #endif

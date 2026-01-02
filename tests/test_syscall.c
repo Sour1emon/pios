@@ -11,7 +11,6 @@
  * - sys_priority functionality
  */
 
-#include "fork.h"
 #include "peripherals/base.h"
 #include "printf.h"
 #include "sched.h"

@@ -3,16 +3,14 @@
 
 #define SYS_WRITE_NUMBER 0
 #define SYS_FORK_NUMBER 1
-#define SYS_MALLOC_NUMBER 2
-#define SYS_EXIT_NUMBER 3
-#define SYS_GETPID_NUMBER 4
-#define SYS_PRIORITY_NUMBER 5
+#define SYS_EXIT_NUMBER 2
+#define SYS_GETPID_NUMBER 3
+#define SYS_PRIORITY_NUMBER 4
 
 #ifndef __ASSEMBLER__
 
 void call_sys_write(char *buf);
 int call_sys_fork();
-unsigned long call_sys_malloc();
 void call_sys_exit();
 long call_sys_getpid();
 void call_sys_priority(long priority);

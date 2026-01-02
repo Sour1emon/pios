@@ -88,7 +88,7 @@ extern void exit_process(void);
    {{0}, 0, 0},                                                                \
    /* state */ 0,                                                              \
    /* counter */ 15,                                                           \
-   /* priority */ 0,                                                           \
+   /* priority */ 15,                                                          \
    /* preempt_count */ 0,                                                      \
    /* pid */ 0,                                                                \
    /* flags */ PF_KTHREAD, /* mm: pgd, user_pages_count, user_pages[],         \

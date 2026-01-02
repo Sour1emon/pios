@@ -1,7 +1,6 @@
 #include "fork.h"
 #include "entry.h"
 #include "mm.h"
-#include "printf.h"
 #include "sched.h"
 #include "utils.h"
 #include <limits.h>
@@ -51,11 +50,12 @@ int copy_process(unsigned long clone_flags, unsigned long fn, unsigned long arg,
   }
 
   unsigned long page = allocate_kernel_page();
-  p = (struct task_struct *)page;
-  struct pt_regs *childregs = task_pt_regs(p);
-
-  if (!p)
+  if (!page)
     return -1;
+
+  p = (struct task_struct *)page;
+
+  struct pt_regs *childregs = task_pt_regs(p);
 
   if (clone_flags & PF_KTHREAD) {
     p->cpu_context.x19 = fn;
@@ -91,11 +91,17 @@ int copy_process(unsigned long clone_flags, unsigned long fn, unsigned long arg,
 
 int move_to_user_mode(unsigned long start, unsigned long size,
                       unsigned long pc) {
+
   struct pt_regs *regs = task_pt_regs(current);
   regs->pstate = PSR_MODE_EL0t;
-  regs->pc = pc;
-  regs->sp = 2 * PAGE_SIZE;
-  unsigned long code_page = allocate_user_page(current, 0);
+  regs->pc = PAGE_SIZE + pc; // Code starts at PAGE_SIZE (0x1000)
+  regs->sp = 3 * PAGE_SIZE;  // Stack above code
+
+  // Map page 0 as a guard page (no user access permissions)
+  map_guard_page(current, 0);
+
+  // Map user code at PAGE_SIZE instead of 0
+  unsigned long code_page = allocate_user_page(current, PAGE_SIZE);
   if (code_page == 0) {
     return -1;
   }

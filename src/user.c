@@ -1,5 +1,4 @@
 #include "user.h"
-#include "printf.h"
 #include "user_sys.h"
 
 void loop(char *str) {

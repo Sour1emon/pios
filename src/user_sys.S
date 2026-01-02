@@ -22,11 +22,6 @@ call_sys_fork:
     syscall SYS_FORK_NUMBER
     ret
 
-.globl call_sys_malloc
-call_sys_malloc:
-    syscall SYS_MALLOC_NUMBER
-    ret
-
 .globl call_sys_exit
 call_sys_exit:
     syscall SYS_EXIT_NUMBER

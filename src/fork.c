@@ -106,6 +106,18 @@ int move_to_user_mode(unsigned long start, unsigned long size,
     return -1;
   }
   memcpy(code_page, start, size);
+
+  // Pre-allocate stack pages (2 and 3) so syscalls don't cause faults
+  unsigned long stack_page_2 = allocate_user_page(current, 2 * PAGE_SIZE);
+  if (stack_page_2 == 0) {
+    return -1;
+  }
+
+  unsigned long stack_page_3 = allocate_user_page(current, 3 * PAGE_SIZE);
+  if (stack_page_3 == 0) {
+    return -1;
+  }
+
   set_pgd(current->mm.pgd);
   return 0;
 }

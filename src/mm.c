@@ -132,14 +132,23 @@ int copy_virt_memory(struct task_struct *dst) {
     if (kernel_va == 0) {
       return -1;
     }
-    memcpy(kernel_va, src->mm.user_pages[i].virt_addr, PAGE_SIZE);
+    // Use physical address + VA_START to access in kernel context, not user
+    // virtual address
+    unsigned long src_kernel_va = src->mm.user_pages[i].phys_addr + VA_START;
+    memcpy(kernel_va, src_kernel_va, PAGE_SIZE);
   }
   return 0;
 }
 
 int do_mem_abort(unsigned long addr, unsigned long esr) {
-  unsigned long dfs = (esr & 0b111111);
-  if ((dfs & 0b111100) == 0b100) {
+  unsigned long fsc = (esr & 0x3f); // Fault Status Code is bits 5:0
+
+  // Check if this is a translation fault (FSC = 0x04 for level 0, 0x05 for
+  // level 1, etc.) or a permission fault (FSC = 0x0c for level 0, 0x0d for
+  // level 1, etc.) We handle translation faults (page doesn't exist yet)
+  unsigned long fsc_type = fsc & 0x3c; // bits 5:2 indicate fault type
+
+  if (fsc_type == 0x04 || fsc_type == 0x0c) { // Translation or permission fault
     if (current->mm.user_pages_count >= MAX_PROCESS_PAGES) {
       return -1;
     }

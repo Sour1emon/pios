@@ -1,6 +1,6 @@
 SECTIONS
 {
-	. = 0xffff000000000000;
+	. = 0xffff000000080000;
 	.text.boot : { *(.text.boot) }
 	. = ALIGN(0x00001000);
 	user_begin = .;
@@ -19,4 +19,7 @@ SECTIONS
 	. = ALIGN(0x00001000);
 	pg_dir = .;
 	.data.pgd : { . += (3 * (1 << 12)); }
+	. = ALIGN(0x00001000);
+	id_pg_dir = .;
+	.data.id_pgd : { . += (3 * (1 << 12)); }
 }

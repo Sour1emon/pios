@@ -14,7 +14,7 @@
 #define SECTION_SIZE (1 << SECTION_SHIFT)
 
 #define LOW_MEMORY (2 * SECTION_SIZE)
-#define HIGH_MEMORY PBASE
+#define HIGH_MEMORY DEVICE_BASE
 
 #define PAGING_MEMORY (HIGH_MEMORY - LOW_MEMORY)
 #define PAGING_PAGES (PAGING_MEMORY / PAGE_SIZE)
@@ -41,7 +41,7 @@ int copy_virt_memory(struct task_struct *dst);
 unsigned long allocate_kernel_page();
 unsigned long allocate_user_page(struct task_struct *task, unsigned long va);
 
-extern unsigned long page_dir;
+extern unsigned long pg_dir;
 
 #endif
 

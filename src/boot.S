@@ -83,6 +83,9 @@ el1_entry:
 	adrp x0, pg_dir
 	msr	 ttbr1_el1, x0
 
+	adrp x0, id_pg_dir
+	msr	 ttbr0_el1, x0
+
 	ldr	 x0, =(TCR_VALUE)
 	msr	 tcr_el1, x0
 
@@ -91,8 +94,10 @@ el1_entry:
 
 	ldr	x2, =kernel_main
 
-	mov	x0, #SCTLR_MMU_ENABLED
+	mrs	x0, sctlr_el1
+	orr	x0, x0, #SCTLR_MMU_ENABLED
 	msr	sctlr_el1, x0
+	isb
 
 	br 	x2
 
@@ -145,7 +150,28 @@ __create_page_tables:
 	/* Mapping device memory*/
 	mov 	x1, #DEVICE_BASE					// start mapping from device base address
 	ldr 	x2, =(VA_START + DEVICE_BASE)				// first virtual address
-	ldr	x3, =(VA_START + PHYS_MEMORY_SIZE - SECTION_SIZE)	// last virtual address
+	ldr	x3, =(VA_START + DEVICE_BASE + 0x1000000 - SECTION_SIZE)	// last virtual address (16MB of device space)
+	create_block_map x0, x1, x2, x3, MMU_DEVICE_FLAGS, x4
+
+	/* Create identity mapping for TTBR0 (low addresses) for boot transition */
+	adrp	x0, id_pg_dir
+	mov	x1, #PG_DIR_SIZE
+	bl 	memzero
+
+	adrp	x0, id_pg_dir
+	mov	x1, xzr							// identity map starts at VA 0
+	create_pgd_entry x0, x1, x2, x3
+
+	/* Identity map kernel memory */
+	mov 	x1, xzr							// start mapping from physical offset 0
+	mov 	x2, xzr							// first virtual address (identity)
+	ldr	x3, =(DEVICE_BASE - SECTION_SIZE)			// last virtual address
+	create_block_map x0, x1, x2, x3, MMU_FLAGS, x4
+
+	/* Identity map device memory */
+	mov 	x1, #DEVICE_BASE					// start mapping from device base address
+	mov 	x2, #DEVICE_BASE					// first virtual address (identity)
+	ldr	x3, =(DEVICE_BASE + 0x1000000 - SECTION_SIZE)		// last virtual address (16MB of device space)
 	create_block_map x0, x1, x2, x3, MMU_DEVICE_FLAGS, x4
 
 	mov	x30, x29						// restore return address

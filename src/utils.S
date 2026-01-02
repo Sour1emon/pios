@@ -10,8 +10,11 @@ get32:
 
 .globl delay
 delay:
+	cbz x0, delay_done    // if x0 == 0, skip loop
+delay_loop:
 	subs x0, x0, #1
-	bne delay
+	bne delay_loop
+delay_done:
 	ret
 
 .globl get_el

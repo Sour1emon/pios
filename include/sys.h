@@ -7,6 +7,9 @@
 
 void sys_write(char *buf);
 int sys_fork(void);
+void sys_exit(void);
+long sys_getpid(void);
+void sys_priority(long priority);
 
 #endif
 #endif

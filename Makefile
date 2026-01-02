@@ -2,10 +2,12 @@ ARMGNU ?= ./arm-gnu-toolchain-15.2.rel1-darwin-arm64-aarch64-none-elf/bin/aarch6
 
 
 COPS = -Wall -Wextra -nostdlib -nostartfiles -ffreestanding -mstrict-align -Iinclude
+COPS_TEST = $(COPS) -DTEST_MODE
 ASMOPS = -Iinclude
 
 BUILD_DIR = build
 SRC_DIR = src
+TEST_DIR = tests
 BOOT_IMG = boot.img
 CONFIG_TXT = config.txt
 
@@ -23,18 +25,47 @@ $(BUILD_DIR)/%_c.o: $(SRC_DIR)/%.c
 $(BUILD_DIR)/%_s.o: $(SRC_DIR)/%.S
 	@$(ARMGNU)-gcc $(ASMOPS) -MMD -c $< -o $@ >/dev/null
 
+# Compile test C files quietly (with TEST_MODE flag)
+$(BUILD_DIR)/tests/%_c.o: $(TEST_DIR)/%.c
+	@mkdir -p $(@D)
+	@$(ARMGNU)-gcc $(COPS_TEST) -MMD -c $< -o $@ >/dev/null
+
+# Compile src C files for test build (with TEST_MODE flag)
+$(BUILD_DIR)/test_src/%_c.o: $(SRC_DIR)/%.c
+	@mkdir -p $(@D)
+	@$(ARMGNU)-gcc $(COPS_TEST) -MMD -c $< -o $@ >/dev/null
+
+# Compile assembly files for test build
+$(BUILD_DIR)/test_src/%_s.o: $(SRC_DIR)/%.S
+	@$(ARMGNU)-gcc $(ASMOPS) -MMD -c $< -o $@ >/dev/null
+
+# Source files
 C_FILES = $(wildcard $(SRC_DIR)/*.c)
 ASM_FILES = $(wildcard $(SRC_DIR)/*.S)
+TEST_C_FILES = $(wildcard $(TEST_DIR)/*.c)
+
+# Object files for normal kernel
 OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%_c.o)
 OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/%_s.o)
 
+# Object files for test kernel (includes test files, compiled with TEST_MODE)
+TEST_OBJ_FILES = $(C_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/test_src/%_c.o)
+TEST_OBJ_FILES += $(ASM_FILES:$(SRC_DIR)/%.S=$(BUILD_DIR)/test_src/%_s.o)
+TEST_OBJ_FILES += $(TEST_C_FILES:$(TEST_DIR)/%.c=$(BUILD_DIR)/tests/%_c.o)
+
 DEP_FILES = $(OBJ_FILES:%.o=%.d)
+DEP_FILES += $(TEST_OBJ_FILES:%.o=%.d)
 -include $(DEP_FILES)
 
 # Link quietly, only show warnings/errors
 kernel8.img: check-toolchain $(SRC_DIR)/linker.ld $(OBJ_FILES)
 	@$(ARMGNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel8.elf $(OBJ_FILES) >/dev/null
 	@$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary kernel8.img
+
+# Build test kernel with test files included
+kernel8-test.img: check-toolchain $(SRC_DIR)/linker.ld $(TEST_OBJ_FILES)
+	@$(ARMGNU)-ld -T $(SRC_DIR)/linker.ld -o $(BUILD_DIR)/kernel8-test.elf $(TEST_OBJ_FILES) >/dev/null
+	@$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8-test.elf -O binary kernel8-test.img
 
 # Create boot.img with config.txt quietly
 $(BOOT_IMG): $(CONFIG_TXT)
@@ -45,6 +76,8 @@ $(BOOT_IMG): $(CONFIG_TXT)
 .PHONY: check-toolchain
 check-toolchain:
 	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)/tests
+	@mkdir -p $(BUILD_DIR)/test_src
 	@printf ".arch armv8-a\nmrs x0, mpidr_el1\n" > $(BUILD_DIR)/check.S
 	-@$(ARMGNU)-gcc -c $(BUILD_DIR)/check.S -o $(BUILD_DIR)/check.o >/dev/null 2>&1 \
 		|| (echo "Error: $(ARMGNU)-gcc does not support AArch64. Install an aarch64 toolchain and run 'make ARMGNU=aarch64-elf'"; exit 1)
@@ -64,3 +97,27 @@ debug: kernel8.img $(BOOT_IMG)
 		-kernel "$(CURDIR)/kernel8.img" \
 		-drive file="$(CURDIR)/$(BOOT_IMG)",format=raw,if=sd,media=disk \
 		-d guest_errors,unimp,int
+
+# Build and run tests in QEMU
+.PHONY: test
+test: kernel8-test.img $(BOOT_IMG)
+	@command -v qemu-system-aarch64 >/dev/null 2>&1 || { echo "qemu-system-aarch64 not found in PATH"; exit 1; }
+	@echo "Running PIOS tests..."
+	@qemu-system-aarch64 -m 1024 -no-reboot -M raspi3b -serial stdio \
+		-kernel "$(CURDIR)/kernel8-test.img" \
+		-drive file="$(CURDIR)/$(BOOT_IMG)",format=raw,if=sd,media=disk
+
+# Build and run tests in QEMU with debug output
+.PHONY: test-debug
+test-debug: kernel8-test.img $(BOOT_IMG)
+	@command -v qemu-system-aarch64 >/dev/null 2>&1 || { echo "qemu-system-aarch64 not found in PATH"; exit 1; }
+	@echo "Running PIOS tests (debug mode)..."
+	@qemu-system-aarch64 -m 1024 -no-reboot -M raspi3b -serial stdio \
+		-kernel "$(CURDIR)/kernel8-test.img" \
+		-drive file="$(CURDIR)/$(BOOT_IMG)",format=raw,if=sd,media=disk \
+		-d guest_errors,unimp,int
+
+# Just build tests without running
+.PHONY: build-test
+build-test: kernel8-test.img
+	@echo "Test kernel built: kernel8-test.img"

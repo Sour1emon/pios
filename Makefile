@@ -1,4 +1,4 @@
-ARMGNU ?= ./arm-gnu-toolchain-15.2.rel1-darwin-arm64-aarch64-none-elf/bin/aarch64-none-elf
+ARMGNU=aarch64-elf
 
 
 COPS = -Wall -Wextra -nostdlib -nostartfiles -ffreestanding -mstrict-align -Iinclude -g
